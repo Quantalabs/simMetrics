@@ -1,6 +1,11 @@
 name: Benchmark
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - src/**
+      - benches/**
+  pull_request:
 
 jobs:
   benchmark:

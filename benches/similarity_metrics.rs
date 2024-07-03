@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::{thread_rng, Rng};
 use similarity_metrics::*;
 
@@ -13,30 +13,46 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             .map(|_| thread_rng().gen_range(0.0f64..1.0).round() as u8)
             .collect();
 
-        group.bench_with_input("Tanimoto", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| tanimoto(f1, f2))
-        });
-        group.bench_with_input("Euclidean", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| euclidean(f1, f2))
-        });
-        group.bench_with_input("Hamming", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| hamming(f1, f2))
-        });
-        group.bench_with_input("Dice", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| dice(f1, f2))
-        });
-        group.bench_with_input("Cosine", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| cosine(f1, f2))
-        });
-        group.bench_with_input("Russell RAO", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| russell_rao(f1, f2))
-        });
-        group.bench_with_input("Forbes", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| forbes(f1, f2))
-        });
-        group.bench_with_input("Soergel", &(f1.clone(), f2.clone()), |b, (f1, f2)| {
-            b.iter(|| soergel(f1, f2))
-        });
+        group.bench_with_input(
+            BenchmarkId::new("Tanimoto", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| tanimoto(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Euclidean", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| euclidean(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Hamming", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| hamming(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Dice", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| dice(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Cosine", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| cosine(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Russell RAO", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| russell_rao(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Forbes", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| forbes(f1, f2)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("Soergel", i),
+            &(f1.clone(), f2.clone()),
+            |b, (f1, f2)| b.iter(|| soergel(f1, f2)),
+        );
     }
 
     group.finish();
