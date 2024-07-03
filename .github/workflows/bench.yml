@@ -1,11 +1,6 @@
 name: Benchmark
 
-on:
-  push:
-    paths:
-      - src/**
-      - benches/**
-  pull_request:
+on: workflow_dispatch
 
 jobs:
   benchmark:

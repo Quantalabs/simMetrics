@@ -1,5 +1,4 @@
-#[inline]
-pub fn abc(f1: &[u8], f2: &[u8]) -> (usize, usize, usize) {
+fn abc(f1: &[u8], f2: &[u8]) -> (usize, usize, usize) {
     let mut a = 0;
     let mut b = 0;
     let mut c = 0;
