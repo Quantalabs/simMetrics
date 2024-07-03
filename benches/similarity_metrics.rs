@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::{thread_rng, Rng};
-use similarity_metrics::*;
+use similarity_metrics::measures::*;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("Similarity Metrics");
