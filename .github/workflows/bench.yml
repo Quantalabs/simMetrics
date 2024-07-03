@@ -1,0 +1,29 @@
+name: Benchmark
+
+on: [push, pull_request]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Criterion
+        run: cargo bench --bench similarity_metrics -- --save-baseline main
+        
+      - name: Zip benchmark results
+        run: zip -r ./criterion_benchmarks.zip ./target/criterion/
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: criterion-benchmarks.zip
+          path: criterion_benchmarks.zip
