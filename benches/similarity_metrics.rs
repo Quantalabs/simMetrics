@@ -1,58 +1,75 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use rand::{thread_rng, Rng};
-use similarity_metrics::measures::*;
+use openbabel::fingerprint::Kind;
+use similarity_metrics::{load, measures};
+
+fn run_metrics<T>(metric: fn(&[u32], &[u32]) -> T, fps: Vec<Vec<u32>>) -> Vec<T> {
+    fps.iter()
+        .flat_map(|x1| {
+            fps.iter()
+                .filter(move |x2| &x1 != x2)
+                .map(move |x2| metric(x1, x2))
+        })
+        .collect::<Vec<T>>()
+}
+
+fn run_metrics_selfies(metric: fn(&str, &str) -> usize, fps: Vec<String>) -> Vec<usize> {
+    fps.iter()
+        .flat_map(|x1| {
+            fps.iter()
+                .filter(move |x2| &x1 != x2)
+                .map(move |x2| metric(x1, x2))
+        })
+        .collect()
+}
+
+fn bench<T>(metric: fn(&[u32], &[u32]) -> T, fp: Kind) -> Vec<T> {
+    let fps = load::gen_fps(fp, "test.mol");
+
+    run_metrics(metric, fps)
+}
+
+fn bench_selfies(metric: fn(&str, &str) -> usize) -> Vec<usize> {
+    let fps = load::load_plain("selfies_test.mol");
+
+    run_metrics_selfies(metric, fps)
+}
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("Similarity Metrics");
+    let fps = vec![
+        (Kind::FP2 { nbits: 2048 }, "Daylight (Clone)"),
+        (Kind::ECFP2 { nbits: 2048 }, "ECFP (Radius 2)"),
+        (Kind::ECFP4 { nbits: 2048 }, "ECFP (Radius 4)"),
+        (Kind::ECFP6 { nbits: 2048 }, "ECFP (Radius 6)"),
+        (Kind::ECFP8 { nbits: 2048 }, "ECFP (Radius 8)"),
+        (Kind::ECFP10 { nbits: 2048 }, "ECFP (Radius 10)"),
+    ];
 
-    for i in (0..=4096).step_by(256) {
-        let f1: Vec<u8> = (0..i)
-            .map(|_| thread_rng().gen_range(0.0f64..1.0).round() as u8)
-            .collect();
-        let f2: Vec<u8> = (0..i)
-            .map(|_| thread_rng().gen_range(0.0f64..1.0).round() as u8)
-            .collect();
-
-        group.bench_with_input(
-            BenchmarkId::new("Tanimoto", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| tanimoto(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Euclidean", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| euclidean(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Hamming", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| hamming(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Dice", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| dice(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Cosine", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| cosine(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Russell RAO", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| russell_rao(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Forbes", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| forbes(f1, f2)),
-        );
-        group.bench_with_input(
-            BenchmarkId::new("Soergel", i),
-            &(f1.clone(), f2.clone()),
-            |b, (f1, f2)| b.iter(|| soergel(f1, f2)),
-        );
+    for fp in fps {
+        group.bench_with_input(BenchmarkId::new("Tanimoto", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::tanimoto, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Soergel", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::soergel, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Russell RAO", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::russell_rao, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Hamming", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::hamming, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Forbes", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::forbes, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Euclidean", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::euclidean, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Dice", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::dice, fp.0.clone()))
+        });
+        group.bench_with_input(BenchmarkId::new("Cosine", fp.1), fp.1, |b, _i| {
+            b.iter(|| bench(measures::cosine, fp.0.clone()))
+        });
     }
 
     group.finish();
