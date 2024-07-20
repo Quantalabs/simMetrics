@@ -4,20 +4,83 @@ fn nonzero_jaro_sim(a: &str, b: &str) -> f64 {
     0.0
 }
 
-// Check whether `a` is the `i`th element of string `b`
-const is_in: fn(char, &str, usize) -> bool =
-    |a: char, b: &str, i: usize| a == b.chars().nth(i).unwrap();
+/// Return longer length of two strings
+const longer: fn(&str, &str) -> isize = |a: &str, b: &str|
+    std::cmp::max(a.len() as isize, b.len() as isize);
+
+/// Return tuple of longer string then shorter string
+const order: for<'a> fn(&'a str, &'a str) -> (&'a str, &'a str) = |a: &str, b: &str|
+    if a.len() > b.len() { (a, b) } else { (b, a) };
+
+/// Check whether `a` is the `i`th element of string `b`
+const is: fn(char, &str, isize) -> bool =
+    |a: char, b: &str, i: isize|
+        if i < 0 { false } else { a == b.chars().nth(i as usize).unwrap() };
 
 /// Check whether the `i`th character of some string, `a`, has a match in string `b`
 /// within a radius of `r` characters. If a match exists, return the index of the match.
 /// Otherwise, return `None`.
-const matches: fn(char, &str, usize, usize) -> Option<usize> =
-    |a: char, b: &str, i: usize, r: usize|
-        ((i - r)..=(std::cmp::min(i + r, b.len()))).find(|&j| is_in(a, b, j));
+const matches: fn(char, &str, isize, isize) -> Option<isize> =
+    |a: char, b: &str, i: isize, r: isize|
+        (
+            std::cmp::max(i - r, 0)
+            ..=std::cmp::min(i + r, b.len() as isize)
+        ).find(|&j| is(a, b, j));
+
+/// Equivalent of `matches` but accepts an additional argument of previous matches `acc` and an
+/// offset for keeping track of indices for recursive calls (this should be set to 0 initially).
+/// This will only return a new match if it is not already in `acc`.
+pub fn unique_matches(
+    a: char, b: &str,
+    i: isize, r: isize,
+    acc: &Vec<isize>, offset: isize
+) -> Option<isize> {
+    match matches(a, b, i, r) {
+        Some(j) => {
+            if acc.contains(&(j + offset)) {
+                let size = (b.len() as isize) - j - 1;
+                if size <= 0 { None }
+                else {
+                    let cut = b.chars().rev().take(size as usize)
+                        .collect::<String>().chars().rev()
+                        .collect::<String>();
+                    unique_matches(a, &cut, i - j - 1, r, acc, j + 1)
+                }
+            }
+            else { Some(j) }
+        },
+        None => None,
+    }
+}
+
+/// Calculate Jaro matching character radius
+const radius: fn(&str, &str) -> isize = |a: &str, b: &str| (longer(a, b) / 2) - 1;
 
 /// Number of characters considered "matching" by Jaro-Winkler
-pub fn matching(a: &str, b: &str) -> usize {
-    0
+/// 
+/// # Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::matching;
+/// assert_eq!(matching("hello", "hello world"), 5);
+/// assert_eq!(matching("FAREMVIEL", "FARMVILLE"), 8);
+/// ```
+pub fn matching(a: &str, b: &str) -> isize {
+    let r = radius(a, b);
+    let (long, short) = order(a, b);
+    let mut acc: Vec<isize> = Vec::new();
+    
+    for i in 0..short.len() {
+        if let Some(j) = unique_matches(
+            short.chars().nth(i).unwrap(),
+            long, i as isize, r,
+            &acc, 0
+        ) {
+            acc.push(j);
+        }
+    }
+
+    acc.len() as isize
 }
 
 /// Jaro distance, in [0, 1]
@@ -55,6 +118,6 @@ pub fn jaro_winkler(a: &str, b: &str, p: Option<f64>) -> f64 {
 /// 
 /// 0 indicates that `a` and `b` are exactly the same.
 /// 1 indicates that there is no similarity between `a` and `b`.
-pub fn jaro_winkler_ext(a: &str, b: &str, p: Option<f64>, l: Option<usize>) -> f64 {
+pub fn jaro_winkler_ext(a: &str, b: &str, p: Option<f64>, l: Option<isize>) -> f64 {
     0.0
 }
