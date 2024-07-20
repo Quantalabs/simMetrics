@@ -15,7 +15,8 @@ const order: for<'a> fn(&'a str, &'a str) -> (&'a str, &'a str) = |a: &str, b: &
 /// Check whether `a` is the `i`th element of string `b`
 const is: fn(char, &str, isize) -> bool =
     |a: char, b: &str, i: isize|
-        if i < 0 { false } else { a == b.chars().nth(i as usize).unwrap() };
+        if i < 0 { false } else if let Some(c) = b.chars().nth(i as usize) { a == c }
+        else { false };
 
 /// Check whether the `i`th character of some string, `a`, has a match in string `b`
 /// within a radius of `r` characters. If a match exists, return the index of the match.
@@ -58,12 +59,19 @@ const radius: fn(&str, &str) -> isize = |a: &str, b: &str| (longer(a, b) / 2) - 
 
 /// Number of characters considered "matching" by Jaro-Winkler
 /// 
-/// # Examples
+/// ## Examples
 /// 
 /// ```
 /// use similarity_metrics::dist::matching;
 /// assert_eq!(matching("hello", "hello world"), 5);
 /// assert_eq!(matching("FAREMVIEL", "FARMVILLE"), 8);
+/// assert_eq!(matching("winkler", "welfare"), 4);
+/// assert_eq!(matching("DWAYNE", "DUANE"), 4);
+/// assert_eq!(matching("martha", "marhta"), 6);
+/// assert_eq!(matching("DIXON", "DIRKSONX"), 4);
+/// assert_eq!(matching("JeLlYfIsH", "SMeLlYfIsH"), 8);
+/// assert_eq!(matching("UPPERCASE", "lowercase"), 0);
+/// assert_eq!(matching("UPPERCASE", "lowerCASE"), 4);
 /// ```
 pub fn matching(a: &str, b: &str) -> isize {
     let r = radius(a, b);
