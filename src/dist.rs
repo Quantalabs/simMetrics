@@ -5,15 +5,58 @@ fn nonzero_jaro_sim(a: &str, b: &str) -> f64 {
 }
 
 /// Return longer length of two strings
-const longer: fn(&str, &str) -> isize = |a: &str, b: &str|
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::longer;
+/// assert_eq!(longer("hello", "hello world"), 11);
+/// assert_eq!(longer("hello", "hello"), 5);
+/// assert_eq!(longer("CAPS", "lower"), 5);
+/// assert_eq!(longer("", "xyz"), 3);
+/// assert_eq!(longer("abcdefgh", ""), 8);
+/// assert_eq!(longer("x", ""), 1);
+/// assert_eq!(longer("", "x"), 1);
+/// assert_eq!(longer("", ""), 0);
+/// ```
+pub const longer: fn(&str, &str) -> isize = |a: &str, b: &str|
     std::cmp::max(a.len() as isize, b.len() as isize);
 
 /// Return tuple of longer string then shorter string
-const order: for<'a> fn(&'a str, &'a str) -> (&'a str, &'a str) = |a: &str, b: &str|
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::order;
+/// assert_eq!(order("hello", "hello world"), ("hello world", "hello"));
+/// assert_eq!(order("hello world", "hello"), ("hello world", "hello"));
+/// assert_eq!(order("CAPS", "lower"), ("lower", "CAPS"));
+/// assert_eq!(order("", "xyz"), ("xyz", ""));
+/// assert_eq!(order("abcdefgh", ""), ("abcdefgh", ""));
+/// assert_eq!(order("x", ""), ("x", ""));
+/// assert_eq!(order("", "x"), ("x", ""));
+/// assert_eq!(order("", ""), ("", ""));
+/// ```
+pub const order: for<'a> fn(&'a str, &'a str) -> (&'a str, &'a str) = |a: &str, b: &str|
     if a.len() > b.len() { (a, b) } else { (b, a) };
 
 /// Check whether `a` is the `i`th element of string `b`
-const is: fn(char, &str, isize) -> bool =
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::is;
+/// assert_eq!(is('h', "hello", 0), true);
+/// assert_eq!(is('e', "hello", 0), false);
+/// assert_eq!(is('e', "hello", 2), false);
+/// assert_eq!(is('l', "hello", 3), true);
+/// assert_eq!(is('l', "hello", 4), false);
+/// assert_eq!(is('o', "hello", 4), true);
+/// assert_eq!(is('o', "hello", 6), false);
+/// assert_eq!(is('x', "hello", 7), false);
+/// assert_eq!(is('x', "hello", 0), false);
+/// ```
+pub const is: fn(char, &str, isize) -> bool =
     |a: char, b: &str, i: isize|
         if i < 0 { false } else if let Some(c) = b.chars().nth(i as usize) { a == c }
         else { false };
@@ -21,7 +64,17 @@ const is: fn(char, &str, isize) -> bool =
 /// Check whether the `i`th character of some string, `a`, has a match in string `b`
 /// within a radius of `r` characters. If a match exists, return the index of the match.
 /// Otherwise, return `None`.
-const matches: fn(char, &str, isize, isize) -> Option<isize> =
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::matches;
+/// assert_eq!(matches('h', "hello", 0, 2), Some(0));
+/// assert_eq!(matches('o', "hello", 0, 2), None);
+/// assert_eq!(matches('e', "hello", 2, 1), Some(1));
+/// assert_eq!(matches('x', "hello", 0, 2), None);
+/// ```
+pub const matches: fn(char, &str, isize, isize) -> Option<isize> =
     |a: char, b: &str, i: isize, r: isize|
         (
             std::cmp::max(i - r, 0)
@@ -31,6 +84,19 @@ const matches: fn(char, &str, isize, isize) -> Option<isize> =
 /// Equivalent of `matches` but accepts an additional argument of previous matches `acc` and an
 /// offset for keeping track of indices for recursive calls (this should be set to 0 initially).
 /// This will only return a new match if it is not already in `acc`.
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::unique_matches;
+/// use similarity_metrics::dist::matches;
+/// let acc: Vec<isize> = [0, 2].to_vec();
+/// assert_eq!(unique_matches('h', "hello", 0, 2, &acc, 0), None);
+/// assert_eq!(unique_matches('o', "hello", 0, 2, &acc, 0), None);
+/// assert_eq!(unique_matches('l', "hello", 2, 1, &acc, 0), Some(3));
+/// assert_eq!(unique_matches('l', "hello", 2, 0, &acc, 0), None);
+/// assert_eq!(unique_matches('m', "mammal", 2, 3, &acc, 0), Some(3));
+/// ```
 pub fn unique_matches(
     a: char, b: &str,
     i: isize, r: isize,
@@ -45,17 +111,35 @@ pub fn unique_matches(
                     let cut = b.chars().rev().take(size as usize)
                         .collect::<String>().chars().rev()
                         .collect::<String>();
-                    unique_matches(a, &cut, i - j - 1, r, acc, j + 1)
+                    unique_matches(a, &cut, i - j - 1, r, acc, j + offset + 1)
                 }
             }
-            else { Some(j) }
+            else { Some(j + offset) }
         },
         None => None,
     }
 }
 
 /// Calculate Jaro matching character radius
-const radius: fn(&str, &str) -> isize = |a: &str, b: &str| (longer(a, b) / 2) - 1;
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::radius;
+/// assert_eq!(radius("hello", "hello world"), 4);
+/// assert_eq!(radius("FAREMVIEL", "FARMVILLE"), 3);
+/// assert_eq!(radius("winkler", "welfare"), 2);
+/// assert_eq!(radius("DWAYNE", "DUANE"), 2);
+/// assert_eq!(radius("five", "four"), 1);
+/// assert_eq!(radius("hi", "low"), 0);
+/// assert_eq!(radius("martha", "marhta"), 2);
+/// assert_eq!(radius("DIXON", "DIRKSONX"), 3);
+/// assert_eq!(radius("JeLlYfIsH", "SMeLlYfIsH"), 4);
+/// assert_eq!(radius("UPPERCASE", "lowercase"), 3);
+/// assert_eq!(radius("UPPERCASE", "lowerCASE"), 3);
+/// ```
+pub const radius: fn(&str, &str) -> isize = |a: &str, b: &str|
+    std::cmp::max((longer(a, b) / 2) - 1, 0);
 
 /// Number of characters considered "matching" by Jaro-Winkler
 /// 
