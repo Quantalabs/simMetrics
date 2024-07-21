@@ -1,5 +1,8 @@
 #![allow(non_upper_case_globals)]
 
+pub type Pointer = Option<isize>;
+pub type Locations = Vec<isize>;
+
 fn nonzero_jaro_sim(a: &str, b: &str) -> f64 {
     0.0
 }
@@ -74,12 +77,24 @@ pub const is: fn(char, &str, isize) -> bool =
 /// assert_eq!(matches('e', "hello", 2, 1), Some(1));
 /// assert_eq!(matches('x', "hello", 0, 2), None);
 /// ```
-pub const matches: fn(char, &str, isize, isize) -> Option<isize> =
+pub const matches: fn(char, &str, isize, isize) -> Pointer =
     |a: char, b: &str, i: isize, r: isize|
         (
             std::cmp::max(i - r, 0)
             ..=std::cmp::min(i + r, b.len() as isize)
         ).find(|&j| is(a, b, j));
+
+/// Get the last `i` characters of string `a`
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::last;
+/// assert_eq!(last("hello", 5), "hello");
+/// assert_eq!(last("hello", 3), "llo");
+/// assert_eq!(last("hello", 0), "");
+/// ```
+pub const last: fn(&str, usize) -> &str = |a: &str, i: usize| &a[(a.len() - i)..];
 
 /// Equivalent of `matches` but accepts an additional argument of previous matches `acc` and an
 /// offset for keeping track of indices for recursive calls (this should be set to 0 initially).
@@ -88,37 +103,32 @@ pub const matches: fn(char, &str, isize, isize) -> Option<isize> =
 /// ## Examples
 /// 
 /// ```
+/// use similarity_metrics::dist::Locations;
 /// use similarity_metrics::dist::unique_matches;
-/// use similarity_metrics::dist::matches;
-/// let acc: Vec<isize> = [0, 2].to_vec();
+/// let acc: Locations = [0, 2].to_vec();
 /// assert_eq!(unique_matches('h', "hello", 0, 2, &acc, 0), None);
 /// assert_eq!(unique_matches('o', "hello", 0, 2, &acc, 0), None);
 /// assert_eq!(unique_matches('l', "hello", 2, 1, &acc, 0), Some(3));
 /// assert_eq!(unique_matches('l', "hello", 2, 0, &acc, 0), None);
 /// assert_eq!(unique_matches('m', "mammal", 2, 3, &acc, 0), Some(3));
 /// ```
-pub fn unique_matches(
-    a: char, b: &str,
-    i: isize, r: isize,
-    acc: &Vec<isize>, offset: isize
-) -> Option<isize> {
-    match matches(a, b, i, r) {
-        Some(j) => {
-            if acc.contains(&(j + offset)) {
-                let size = (b.len() as isize) - j - 1;
-                if size <= 0 { None }
-                else {
-                    let cut = b.chars().rev().take(size as usize)
-                        .collect::<String>().chars().rev()
-                        .collect::<String>();
-                    unique_matches(a, &cut, i - j - 1, r, acc, j + offset + 1)
-                }
-            }
-            else { Some(j + offset) }
-        },
-        None => None,
-    }
-}
+pub const unique_matches: fn(char, &str, isize, isize, &Locations, isize) -> Pointer =
+    | a: char, b: &str, i: isize, r: isize, acc: &Locations, offset: isize |
+        match matches(a, b, i, r) {
+            Some(j) => {
+                if acc.contains(&(j + offset)) {
+                    let size = (b.len() as isize) - j - 1;
+                    if size <= 0 { None } else {
+                        unique_matches(
+                            a, last(b, size as usize),
+                            i - j - 1, r,
+                            acc, j + offset + 1
+                        )
+                    }
+                } else { Some(j + offset) }
+            },
+            None => None,
+        };
 
 /// Calculate Jaro matching character radius
 /// 
@@ -160,7 +170,7 @@ pub const radius: fn(&str, &str) -> isize = |a: &str, b: &str|
 pub fn matching(a: &str, b: &str) -> isize {
     let r = radius(a, b);
     let (long, short) = order(a, b);
-    let mut acc: Vec<isize> = Vec::new();
+    let mut acc: Locations = Vec::new();
     
     for i in 0..short.len() {
         if let Some(j) = unique_matches(
