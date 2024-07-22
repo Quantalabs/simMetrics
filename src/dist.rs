@@ -3,6 +3,12 @@
 pub type Pointer = Option<isize>;
 pub type Locations = Vec<isize>;
 
+#[derive(Debug)]
+struct Ordered {
+    long: &'static str,
+    short: &'static str
+}
+
 fn nonzero_jaro_sim(a: &str, b: &str) -> f64 {
     0.0
 }
@@ -25,23 +31,9 @@ fn nonzero_jaro_sim(a: &str, b: &str) -> f64 {
 pub const longer: fn(&str, &str) -> isize = |a: &str, b: &str|
     std::cmp::max(a.len() as isize, b.len() as isize);
 
-/// Return tuple of longer string then shorter string
-/// 
-/// ## Examples
-/// 
-/// ```
-/// use similarity_metrics::dist::order;
-/// assert_eq!(order("hello", "hello world"), ("hello world", "hello"));
-/// assert_eq!(order("hello world", "hello"), ("hello world", "hello"));
-/// assert_eq!(order("CAPS", "lower"), ("lower", "CAPS"));
-/// assert_eq!(order("", "xyz"), ("xyz", ""));
-/// assert_eq!(order("abcdefgh", ""), ("abcdefgh", ""));
-/// assert_eq!(order("x", ""), ("x", ""));
-/// assert_eq!(order("", "x"), ("x", ""));
-/// assert_eq!(order("", ""), ("", ""));
-/// ```
-pub const order: for<'a> fn(&'a str, &'a str) -> (&'a str, &'a str) = |a: &str, b: &str|
-    if a.len() > b.len() { (a, b) } else { (b, a) };
+/// Return ordered pair of strings
+const order: fn(&'static str, &'static str) -> Ordered = |a: &str, b: &str|
+    if a.len() > b.len() { Ordered { long: a, short: b } } else { Ordered { long: b, short: a } };
 
 /// Check whether `a` is the `i`th element of string `b`
 /// 
@@ -151,6 +143,41 @@ pub const unique_matches: fn(char, &str, isize, isize, &Locations, isize) -> Poi
 pub const radius: fn(&str, &str) -> isize = |a: &str, b: &str|
     std::cmp::max((longer(a, b) / 2) - 1, 0);
 
+/// Append `i` to `Locations`
+/// 
+/// ## Examples
+/// 
+/// ```
+/// use similarity_metrics::dist::Locations;
+/// use similarity_metrics::dist::append;
+/// 
+/// let empty: Locations = [].to_vec();
+/// assert_eq!(append(empty, 0), [0]);
+/// 
+/// let singleton: Locations = [0].to_vec();
+/// assert_eq!(append(singleton, 2), [0, 2]);
+/// 
+/// let acc: Locations = [0, 2].to_vec();
+/// assert_eq!(append(acc, 3), [0, 2, 3]);
+/// 
+/// let acc2: Locations = [0, 2, 3].to_vec();
+/// assert_eq!(append(acc2, 6), [0, 2, 3, 6]);
+/// ```
+pub const append: fn(Locations, isize) -> Locations =
+    |acc: Locations, i: isize| acc.iter().cloned().chain(std::iter::once(i)).collect();
+
+const matching_ordered: fn(Ordered, isize) -> isize =
+    |pair: Ordered, r: isize|
+        (0..pair.short.len()).fold(
+            Vec::new(),
+            |acc, i|
+                if let Some(j) = unique_matches(
+                    pair.short.chars().nth(i).unwrap(),
+                    pair.long, i as isize, r,
+                    &acc, 0
+                ) { append(acc, j) } else { acc }
+        ).len() as isize;
+
 /// Number of characters considered "matching" by Jaro-Winkler
 /// 
 /// ## Examples
@@ -167,23 +194,8 @@ pub const radius: fn(&str, &str) -> isize = |a: &str, b: &str|
 /// assert_eq!(matching("UPPERCASE", "lowercase"), 0);
 /// assert_eq!(matching("UPPERCASE", "lowerCASE"), 4);
 /// ```
-pub fn matching(a: &str, b: &str) -> isize {
-    let r = radius(a, b);
-    let (long, short) = order(a, b);
-    let mut acc: Locations = Vec::new();
-    
-    for i in 0..short.len() {
-        if let Some(j) = unique_matches(
-            short.chars().nth(i).unwrap(),
-            long, i as isize, r,
-            &acc, 0
-        ) {
-            acc.push(j);
-        }
-    }
-
-    acc.len() as isize
-}
+pub const matching: fn(&'static str, &'static str) -> isize = |a: &str, b: &str|
+    matching_ordered(order(a, b), radius(a, b));
 
 /// Jaro distance, in [0, 1]
 /// 
@@ -191,7 +203,7 @@ pub fn matching(a: &str, b: &str) -> isize {
 /// 
 /// 0 indicates that `a` and `b` are exactly the same.
 /// 1 indicates that there is no similarity between `a` and `b`.
-pub fn jaro(a: &str, b: &str) -> f64 {
+pub fn jaro(a: &'static str, b: &'static str) -> f64 {
     if matching(a, b) == 0 { 0.0 } else { nonzero_jaro_sim(a, b) }
 }
 
