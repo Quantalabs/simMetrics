@@ -16,6 +16,7 @@ jobs:
           rustup component add llvm-tools-preview
           cargo install flamegraph
           cargo install cargo-pgo
+          sudo apt update --fix-missing
           sudo apt install linux-tools-common linux-tools-generic linux-tools-`uname -r`
       - name: Run Criterion and Benchmark
         run: |
