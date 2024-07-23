@@ -18,6 +18,7 @@ jobs:
           cargo install cargo-pgo
           sudo apt update --fix-missing
           sudo apt install linux-tools-common linux-tools-generic linux-tools-`uname -r`
+          sudo sysctl kernel.perf_event_paranoid=-1
       - name: Run Criterion and Benchmark
         run: |
           cargo flamegraph --bench similarity_metrics -o /target/criterion/flamegraph.svg
