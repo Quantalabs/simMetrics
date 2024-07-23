@@ -29,7 +29,7 @@ fn bench<T>(metric: fn(&[u32], &[u32]) -> T, fp: Kind) -> Vec<T> {
 }
 
 fn bench_selfies(metric: fn(&str, &str) -> usize) -> Vec<usize> {
-    let fps = load::load_plain("selfies_test.mol");
+    let fps = load::load_plain("test.mol");
 
     run_metrics_selfies(metric, fps)
 }

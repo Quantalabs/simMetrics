@@ -11,8 +11,9 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Install Criterion
-        run: cargo bench --bench similarity_metrics -- --save-baseline main
+      - name: Run Criterion and Benchmark
+        run: |
+          cargo flamegraph --bench similarity_metrics
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:

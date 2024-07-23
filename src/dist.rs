@@ -26,14 +26,14 @@ fn lcs_helper(
     if x[i - 1] == y[j - 1] {
         let result = 1 + lcs_helper(x, y, i - 1, j - 1, memo);
         memo[i][j] = Some(result);
-        return result;
+        result
     } else {
         let result = usize::max(
             lcs_helper(x, y, i - 1, j, memo),
             lcs_helper(x, y, i, j - 1, memo),
         );
         memo[i][j] = Some(result);
-        return result;
+        result
     }
 }
 
