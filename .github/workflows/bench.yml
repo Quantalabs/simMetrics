@@ -14,16 +14,12 @@ jobs:
       - name: Install dependencies
         run: |
           rustup component add llvm-tools-preview
-          cargo install flamegraph
           cargo install cargo-pgo
-          sudo apt update --fix-missing
-          sudo apt install linux-tools-common linux-tools-generic linux-tools-`uname -r`
-          sudo sysctl kernel.perf_event_paranoid=-1
       - name: Run Criterion and Benchmark
         run: |
-          cargo flamegraph --root --bench similarity_metrics -o /target/criterion/flamegraph.svg
+          cargo pgo bench
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
-          name: benchmarks
-          path: /target/criterion/
+          name: bench_and_profiles
+          path: /target/
