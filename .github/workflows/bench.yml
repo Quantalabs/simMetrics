@@ -11,6 +11,11 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - name: Install dependencies
+        run: |
+          rustup component add llvm-tools-preview
+          cargo install flamegraph
+          cargo install cargo-pgo
       - name: Run Criterion and Benchmark
         run: |
           cargo flamegraph --bench similarity_metrics
