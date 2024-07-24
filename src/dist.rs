@@ -44,21 +44,31 @@ pub fn lcs(x: &str, y: &str) -> usize {
 }
 
 pub fn _l_distance(s: &[char], t: &[char]) -> usize {
-    match (s.is_empty(), t.is_empty()) {
-        (true, true) => 0,
-        (true, false) => t.len(),
-        (false, true) => s.len(),
-        (false, false) => {
-            if s[0] == t[0] {
-                _l_distance(&s[1..], &t[1..])
+    let (m, n) = (s.len(), t.len());
+
+    // Create a memoization table
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+
+    // Initialize the base cases
+    for i in 0..=m {
+        dp[i][0] = i;
+    }
+    for j in 0..=n {
+        dp[0][j] = j;
+    }
+
+    // Fill the dp table
+    for i in 1..=m {
+        for j in 1..=n {
+            if s[i - 1] == t[j - 1] {
+                dp[i][j] = dp[i - 1][j - 1];
             } else {
-                1 + usize::min(
-                    _l_distance(&s[1..], t),
-                    usize::min(_l_distance(s, &t[1..]), _l_distance(&s[1..], &t[1..])),
-                )
+                dp[i][j] = 1 + dp[i - 1][j].min(dp[i][j - 1]).min(dp[i - 1][j - 1]);
             }
         }
     }
+
+    dp[m][n]
 }
 
 pub fn l_distance(s: &str, t: &str) -> usize {
