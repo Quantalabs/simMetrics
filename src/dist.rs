@@ -49,11 +49,14 @@ pub fn _l_distance(s: &[char], t: &[char]) -> usize {
         (true, false) => t.len(),
         (false, true) => s.len(),
         (false, false) => {
-            let cost = if s[0] == t[0] { 0 } else { 1 };
-            let insertion = _l_distance(s, &t[1..]) + 1;
-            let deletion = _l_distance(&s[1..], t) + 1;
-            let substitution = _l_distance(&s[1..], &t[1..]) + cost;
-            *[insertion, deletion, substitution].iter().min().unwrap()
+            if s[0] == t[0] {
+                _l_distance(&s[1..], &t[1..])
+            } else {
+                1 + usize::min(
+                    _l_distance(&s[1..], t),
+                    usize::min(_l_distance(s, &t[1..]), _l_distance(&s[1..], &t[1..])),
+                )
+            }
         }
     }
 }
