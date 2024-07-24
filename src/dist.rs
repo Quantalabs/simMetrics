@@ -1,13 +1,3 @@
-pub fn hamming_strings(f1: &str, f2: &str) -> usize {
-    if f1.len() != f2.len() {
-        panic!("Expected strings to have same length.");
-    }
-
-    f1.split("")
-        .zip(f2.split(""))
-        .fold(0, |val, a| val + { a.0 != a.1 } as usize)
-}
-
 fn lcs_helper(
     x: &[char],
     y: &[char],

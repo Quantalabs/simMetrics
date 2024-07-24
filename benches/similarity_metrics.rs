@@ -72,11 +72,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         });
     }
 
-    let edit_distances: Vec<(&str, fn(&str, &str) -> usize)> = vec![
-        ("Hamming (With Selfies)", dist::hamming_strings),
-        ("LCS", dist::lcs),
-        ("Levenshtein", dist::l_distance),
-    ];
+    let edit_distances: Vec<(&str, fn(&str, &str) -> usize)> =
+        vec![("LCS", dist::lcs), ("Levenshtein", dist::l_distance)];
 
     for distance in edit_distances {
         group.bench_function(distance.0, |b| b.iter(|| bench_selfies(distance.1)));
