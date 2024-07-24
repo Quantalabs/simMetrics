@@ -46,29 +46,27 @@ pub fn lcs(x: &str, y: &str) -> usize {
 pub fn _l_distance(s: &[char], t: &[char]) -> usize {
     let (m, n) = (s.len(), t.len());
 
-    // Create a memoization table
-    let mut dp = vec![vec![0; n + 1]; m + 1];
-
-    // Initialize the base cases
-    for i in 0..=m {
-        dp[i][0] = i;
-    }
-    for j in 0..=n {
-        dp[0][j] = j;
+    // Ensure the shorter string is 's' for memory efficiency
+    if m < n {
+        return _l_distance(t, s);
     }
 
-    // Fill the dp table
+    let mut prev_row = (0..=n).collect::<Vec<usize>>();
+    let mut curr_row = vec![0; n + 1];
+
     for i in 1..=m {
+        curr_row[0] = i;
         for j in 1..=n {
             if s[i - 1] == t[j - 1] {
-                dp[i][j] = dp[i - 1][j - 1];
+                curr_row[j] = prev_row[j - 1];
             } else {
-                dp[i][j] = 1 + dp[i - 1][j].min(dp[i][j - 1]).min(dp[i - 1][j - 1]);
+                curr_row[j] = 1 + prev_row[j].min(curr_row[j - 1]).min(prev_row[j - 1]);
             }
         }
+        prev_row.copy_from_slice(&curr_row);
     }
 
-    dp[m][n]
+    prev_row[n]
 }
 
 pub fn l_distance(s: &str, t: &str) -> usize {
