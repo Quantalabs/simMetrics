@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use openbabel::fingerprint::Kind;
-use similarity_metrics::{load, measures};
+use similarity_metrics::{dist, load, measures};
 
 fn run_metrics<T>(metric: fn(&[u32], &[u32]) -> T, fps: Vec<Vec<u32>>) -> Vec<T> {
     fps.iter()
@@ -29,7 +29,7 @@ fn bench<T>(metric: fn(&[u32], &[u32]) -> T, fp: Kind) -> Vec<T> {
 }
 
 fn bench_selfies(metric: fn(&str, &str) -> usize) -> Vec<usize> {
-    let fps = load::load_plain("selfies_test.mol");
+    let fps = load::load_plain("test.mol");
 
     run_metrics_selfies(metric, fps)
 }
@@ -70,6 +70,13 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("Cosine", fp.1), fp.1, |b, _i| {
             b.iter(|| bench(measures::cosine, fp.0.clone()))
         });
+    }
+
+    let edit_distances: Vec<(&str, fn(&str, &str) -> usize)> =
+        vec![("LCS", dist::lcs), ("Levenshtein", dist::l_distance)];
+
+    for distance in edit_distances {
+        group.bench_function(distance.0, |b| b.iter(|| bench_selfies(distance.1)));
     }
 
     group.finish();

@@ -11,10 +11,11 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Install Criterion
-        run: cargo bench --bench similarity_metrics -- --save-baseline main
+      - name: Run Criterion and Benchmark
+        run: |
+          cargo bench
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
-          name: benchmarks
-          path: /target/criterion/
+          name: target
+          path: ./target/
