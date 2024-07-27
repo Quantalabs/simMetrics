@@ -28,9 +28,9 @@ pub const longer: fn(&str, &str) -> isize = |a: &str, b: &str|
     std::cmp::max(a.len() as isize, b.len() as isize);
 
 /// Return ordered pair of strings
-const order: fn(String, String) -> Ordered = |a: String, b: String|
-    if a.len() > b.len() { Ordered { long: a, short: b } }
-    else { Ordered { long: b, short: a } };
+const order: fn(&str, &str) -> Ordered = |a: &str, b: &str|
+    if a.len() > b.len() { Ordered { long: a.to_string(), short: b.to_string() } }
+    else { Ordered { long: b.to_string(), short: a.to_string() } };
 
 /// Check whether `a` is the `i`th element of string `b`
 /// 
@@ -380,26 +380,26 @@ const gen_jaro_metrics: fn(Locations) -> (isize, isize) = |permutation: Location
 /// 
 /// ```
 /// use similarity_metrics::dist::matching;
-/// assert_eq!(matching("hello".to_string(), "hello world".to_string()), (5, 0));
-/// assert_eq!(matching("---amyez---".to_string(), "---zayem---".to_string()), (11, 2));
-/// assert_eq!(matching("---zayem---".to_string(), "---amyez---".to_string()), (11, 2));
-/// assert_eq!(matching("FAREMVIEL".to_string(), "FARMVILLE".to_string()), (8, 1));
-/// assert_eq!(matching("winkler".to_string(), "welfare".to_string()), (4, 1));
-/// assert_eq!(matching("DWAYNE".to_string(), "DUANE".to_string()), (4, 0));
-/// assert_eq!(matching("DUANE".to_string(), "DWAYNE".to_string()), (4, 0));
-/// assert_eq!(matching("martha".to_string(), "marhta".to_string()), (6, 1));
-/// assert_eq!(matching("DIXON".to_string(), "DIRKSONX".to_string()), (4, 0));
-/// assert_eq!(matching("JeLlYfIsH".to_string(), "SMeLlYfIsH".to_string()), (8, 0));
-/// assert_eq!(matching("UPPERCASE".to_string(), "lowercase".to_string()), (0, 0));
-/// assert_eq!(matching("UPPERCASE".to_string(), "lowerCASE".to_string()), (4, 0));
-/// assert_eq!(matching("!@#ABCDE$%^".to_string(), "$%^EABCD!@#".to_string()), (5, 1));
-/// assert_eq!(matching("$%^EABCD!@#".to_string(), "!@#ABCDE$%^".to_string()), (5, 1));
-/// assert_eq!(matching("".to_string(), "".to_string()), (0, 0));
-/// assert_eq!(matching("a".to_string(), "".to_string()), (0, 0));
-/// assert_eq!(matching("a".to_string(), "ab".to_string()), (1, 0));
+/// assert_eq!(matching("hello", "hello world"), (5, 0));
+/// assert_eq!(matching("---amyez---", "---zayem---"), (11, 2));
+/// assert_eq!(matching("---zayem---", "---amyez---"), (11, 2));
+/// assert_eq!(matching("FAREMVIEL", "FARMVILLE"), (8, 1));
+/// assert_eq!(matching("winkler", "welfare"), (4, 1));
+/// assert_eq!(matching("DWAYNE", "DUANE"), (4, 0));
+/// assert_eq!(matching("DUANE", "DWAYNE"), (4, 0));
+/// assert_eq!(matching("martha", "marhta"), (6, 1));
+/// assert_eq!(matching("DIXON", "DIRKSONX"), (4, 0));
+/// assert_eq!(matching("JeLlYfIsH", "SMeLlYfIsH"), (8, 0));
+/// assert_eq!(matching("UPPERCASE", "lowercase"), (0, 0));
+/// assert_eq!(matching("UPPERCASE", "lowerCASE"), (4, 0));
+/// assert_eq!(matching("!@#ABCDE$%^", "$%^EABCD!@#"), (5, 1));
+/// assert_eq!(matching("$%^EABCD!@#", "!@#ABCDE$%^"), (5, 1));
+/// assert_eq!(matching("", ""), (0, 0));
+/// assert_eq!(matching("a", ""), (0, 0));
+/// assert_eq!(matching("a", "ab"), (1, 0));
 /// ```
-pub const matching: fn(String, String) -> (isize, isize) = |a: String, b: String|
-    gen_jaro_metrics(matching_ordered(order(a.clone(), b.clone()), radius(a.as_str(), b.as_str())));
+pub const matching: fn(&str, &str) -> (isize, isize) = |a: &str, b: &str|
+    gen_jaro_metrics(matching_ordered(order(a, b), radius(a, b)));
 
 /// Jaro similarity, in [0, 1]
 /// 
@@ -435,27 +435,27 @@ const jaro_sim: fn(&str, &str, (isize, isize)) -> f64 =
 /// const around: fn(f64, f64) -> bool = |a: f64, b: f64| (a - b).abs() <= epsilon;
 /// const frac: fn(isize, isize) -> f64 = |a: isize, b: isize| (a as f64) / (b as f64);
 /// const zero: f64 = 0.0;
-/// assert!(around(jaro("hello".to_string(), "hello world".to_string()), frac(9, 11)));
-/// assert!(around(jaro("---amyez---".to_string(), "---zayem---".to_string()), frac(31, 33)));
-/// assert!(around(jaro("---zayem---".to_string(), "---amyez---".to_string()), frac(31, 33)));
-/// assert!(around(jaro("FAREMVIEL".to_string(), "FARMVILLE".to_string()), frac(191, 216)));
-/// assert!(around(jaro("winkler".to_string(), "welfare".to_string()), frac(53, 84)));
-/// assert!(around(jaro("DWAYNE".to_string(), "DUANE".to_string()), frac(37, 45)));
-/// assert!(around(jaro("DUANE".to_string(), "DWAYNE".to_string()), frac(37, 45)));
-/// assert!(around(jaro("martha".to_string(), "marhta".to_string()), frac(17, 18)));
-/// assert!(around(jaro("DIXON".to_string(), "DIRKSONX".to_string()), frac(23, 30)));
-/// assert!(around(jaro("JeLlYfIsH".to_string(), "SMeLlYfIsH".to_string()), frac(121, 135)));
-/// assert!(around(jaro("UPPERCASE".to_string(), "lowercase".to_string()), zero));
-/// assert!(around(jaro("UPPERCASE".to_string(), "lowerCASE".to_string()), frac(17, 27)));
-/// assert!(around(jaro("!@#ABCDE$%^".to_string(), "$%^EABCD!@#".to_string()), frac(94, 165)));
-/// assert!(around(jaro("$%^EABCD!@#".to_string(), "!@#ABCDE$%^".to_string()), frac(94, 165)));
-/// assert!(around(jaro("".to_string(), "".to_string()), zero));
-/// assert!(around(jaro("a".to_string(), "".to_string()), zero));
-/// assert!(around(jaro("a".to_string(), "ab".to_string()), frac(5, 6)));
+/// assert!(around(jaro("hello", "hello world"), frac(9, 11)));
+/// assert!(around(jaro("---amyez---", "---zayem---"), frac(31, 33)));
+/// assert!(around(jaro("---zayem---", "---amyez---"), frac(31, 33)));
+/// assert!(around(jaro("FAREMVIEL", "FARMVILLE"), frac(191, 216)));
+/// assert!(around(jaro("winkler", "welfare"), frac(53, 84)));
+/// assert!(around(jaro("DWAYNE", "DUANE"), frac(37, 45)));
+/// assert!(around(jaro("DUANE", "DWAYNE"), frac(37, 45)));
+/// assert!(around(jaro("martha", "marhta"), frac(17, 18)));
+/// assert!(around(jaro("DIXON", "DIRKSONX"), frac(23, 30)));
+/// assert!(around(jaro("JeLlYfIsH", "SMeLlYfIsH"), frac(121, 135)));
+/// assert!(around(jaro("UPPERCASE", "lowercase"), zero));
+/// assert!(around(jaro("UPPERCASE", "lowerCASE"), frac(17, 27)));
+/// assert!(around(jaro("!@#ABCDE$%^", "$%^EABCD!@#"), frac(94, 165)));
+/// assert!(around(jaro("$%^EABCD!@#", "!@#ABCDE$%^"), frac(94, 165)));
+/// assert!(around(jaro("", ""), zero));
+/// assert!(around(jaro("a", ""), zero));
+/// assert!(around(jaro("a", "ab"), frac(5, 6)));
 /// ```
-pub const jaro: fn(String, String) -> f64 =
-    |a: String, b|
-        jaro_sim(a.clone().as_str(), b.clone().as_str(), matching(a, b));
+pub const jaro: fn(&str, &str) -> f64 =
+    |a: &str, b: &str|
+        jaro_sim(a, b, matching(a, b));
 
 /// Length of longest common prefix between two strings
 /// 
@@ -499,70 +499,70 @@ const jaro_winkler_sim: fn(f64, f64, isize) -> f64 =
 /// const frac: fn(isize, isize) -> f64 = |a: isize, b: isize| (a as f64) / (b as f64);
 /// const zero: f64 = 0.0;
 /// assert!(around(
-///     jaro_winkler("hello".to_string(), "hello world".to_string(), None), frac(49, 55)
+///     jaro_winkler("hello", "hello world", None), frac(49, 55)
 /// ));
 /// assert!(around(
 ///     jaro_winkler(
-///         "---amyez---".to_string(), "---zayem---".to_string(), Some(0.2)
+///         "---amyez---", "---zayem---", Some(0.2)
 ///     ), frac(161, 165)
 /// ));
 /// assert!(around(
 ///     jaro_winkler(
-///         "---zayem---".to_string(), "---amyez---".to_string(), Some(0.2)
+///         "---zayem---", "---amyez---", Some(0.2)
 ///     ), frac(161, 165)
 /// ));
 /// assert!(around(
-///     jaro_winkler("FAREMVIEL".to_string(), "FARMVILLE".to_string(), None), frac(397, 432)
+///     jaro_winkler("FAREMVIEL", "FARMVILLE", None), frac(397, 432)
 /// ));
 /// assert!(around(
-///     jaro_winkler("winkler".to_string(), "welfare".to_string(), Some(0.4)), frac(81, 112)
+///     jaro_winkler("winkler", "welfare", Some(0.4)), frac(81, 112)
 /// ));
 /// assert!(around(
-///     jaro_winkler("DWAYNE".to_string(), "DUANE".to_string(), None), frac(21, 25)
+///     jaro_winkler("DWAYNE", "DUANE", None), frac(21, 25)
 /// ));
 /// assert!(around(
-///     jaro_winkler("DUANE".to_string(), "DWAYNE".to_string(), None), frac(21, 25)
+///     jaro_winkler("DUANE", "DWAYNE", None), frac(21, 25)
 /// ));
 /// assert!(around(
-///     jaro_winkler("martha".to_string(), "marhta".to_string(), Some(0.05)), frac(343, 360)
+///     jaro_winkler("martha", "marhta", Some(0.05)), frac(343, 360)
 /// ));
 /// assert!(around(
-///     jaro_winkler("DIXON".to_string(), "DIRKSONX".to_string(), None), frac(61, 75)
+///     jaro_winkler("DIXON", "DIRKSONX", None), frac(61, 75)
 /// ));
 /// assert!(around(
-///     jaro_winkler("JeLlYfIsH".to_string(), "SMeLlYfIsH".to_string(), Some(0.5)), frac(121, 135)
+///     jaro_winkler("JeLlYfIsH", "SMeLlYfIsH", Some(0.5)), frac(121, 135)
 /// ));
 /// assert!(around(
-///     jaro_winkler("UPPERCASE".to_string(), "lowercase".to_string(), None), zero
+///     jaro_winkler("UPPERCASE", "lowercase", None), zero
 /// ));
 /// assert!(around(
-///     jaro_winkler("UPPERCASE".to_string(), "lowerCASE".to_string(), None), frac(17, 27)
+///     jaro_winkler("UPPERCASE", "lowerCASE", None), frac(17, 27)
 /// ));
 /// assert!(around(
-///     jaro_winkler("!@#ABCDE$%^".to_string(), "$%^EABCD!@#".to_string(), None), frac(94, 165)
+///     jaro_winkler("!@#ABCDE$%^", "$%^EABCD!@#", None), frac(94, 165)
 /// ));
 /// assert!(around(
-///     jaro_winkler("$%^EABCD!@#".to_string(), "!@#ABCDE$%^".to_string(), None), frac(94, 165)
+///     jaro_winkler("$%^EABCD!@#", "!@#ABCDE$%^", None), frac(94, 165)
 /// ));
 /// assert!(around(
-///     jaro_winkler("".to_string(), "".to_string(), None), zero
+///     jaro_winkler("", "", None), zero
 /// ));
 /// assert!(around(
-///     jaro_winkler("a".to_string(), "".to_string(), None), zero
+///     jaro_winkler("a", "", None), zero
 /// ));
 /// assert!(around(
-///     jaro_winkler("a".to_string(), "ab".to_string(), Some(0.25)), frac(7, 8)
+///     jaro_winkler("a", "ab", Some(0.25)), frac(7, 8)
 /// ));
 /// assert!(around(
-///     jaro_winkler("ab".to_string(), "a".to_string(), Some(zero)), frac(5, 6)
+///     jaro_winkler("ab", "a", Some(zero)), frac(5, 6)
 /// ))
 /// ```
-pub const jaro_winkler: fn(String, String, Option<f64>) -> f64 =
-    |a: String, b: String, p: Option<f64>|
+pub const jaro_winkler: fn(&str, &str, Option<f64>) -> f64 =
+    |a: &str, b: &str, p: Option<f64>|
         jaro_winkler_sim(
-            jaro(a.clone(), b.clone()),
+            jaro(a, b),
             f64::min(p.unwrap_or(0.1), 0.25),
-            std::cmp::min(len_common_prefix(a.as_str(), b.as_str()), 4)
+            std::cmp::min(len_common_prefix(a, b), 4)
         );
 
 /// Jaro–Winkler distance with custom prefix length, in [0, 1]
@@ -601,30 +601,30 @@ const jaro_winkler_ext_sim: fn(f64, f64, isize, isize) -> f64 =
 /// const frac: fn(isize, isize) -> f64 = |a: isize, b: isize| (a as f64) / (b as f64);
 /// const one: f64 = 1.0;
 /// assert!(around(
-///     jaro_winkler_ext("hello".to_string(), "hello world".to_string(), None, None), frac(10, 11)
+///     jaro_winkler_ext("hello", "hello world", None, None), frac(10, 11)
 /// ));
 /// assert!(around(
 ///     jaro_winkler_ext(
-///         "---amyez---".to_string(), "---zayem---".to_string(), Some(0.5), Some(2)
+///         "---amyez---", "---zayem---", Some(0.5), Some(2)
 ///     ), one
 /// ));
 /// assert!(around(
 ///     jaro_winkler_ext(
-///         "---zayem---".to_string(), "---amyez---".to_string(), Some(0.2), Some(3)
+///         "---zayem---", "---amyez---", Some(0.2), Some(3)
 ///     ), frac(161, 165)
 /// ));
 /// assert!(around(
-///     jaro_winkler_ext("FAREMVIEL".to_string(), "FARMVILLE".to_string(), None, None), frac(397, 432)
+///     jaro_winkler_ext("FAREMVIEL", "FARMVILLE", None, None), frac(397, 432)
 /// ));
 /// assert!(around(
-///     jaro_winkler_ext("winkler".to_string(), "welfare".to_string(), Some(0.25), None), frac(67, 98)
+///     jaro_winkler_ext("winkler", "welfare", Some(0.25), None), frac(67, 98)
 /// ));
 /// ```
-pub const jaro_winkler_ext: fn(String, String, Option<f64>, Option<isize>) -> f64 =
-    |a: String, b: String, p: Option<f64>, l: Option<isize>|
+pub const jaro_winkler_ext: fn(&str, &str, Option<f64>, Option<isize>) -> f64 =
+    |a: &str, b: &str, p: Option<f64>, l: Option<isize>|
         jaro_winkler_ext_sim(
-            jaro(a.clone(), b.clone()),
+            jaro(a, b),
             p.unwrap_or(0.1),
-            len_common_prefix(a.as_str(), b.as_str()),
+            len_common_prefix(a, b),
             l.unwrap_or(std::cmp::min(a.len() as isize, b.len() as isize))
         );
