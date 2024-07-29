@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use openbabel::fingerprint::Kind;
 use similarity_metrics::{dist, load, measures};
 
-fn run_metrics<T>(metric: fn(&[u32], &[u32]) -> T, fps: Vec<Vec<u32>>) -> Vec<T> {
+fn run_metrics<T>(metric: fn(&[u8], &[u8]) -> T, fps: Vec<Vec<u8>>) -> Vec<T> {
     fps.iter()
         .flat_map(|x1| {
             fps.iter()
@@ -22,7 +22,7 @@ fn run_metrics_selfies(metric: fn(&str, &str) -> usize, fps: Vec<String>) -> Vec
         .collect()
 }
 
-fn bench<T>(metric: fn(&[u32], &[u32]) -> T, fp: Kind) -> Vec<T> {
+fn bench<T>(metric: fn(&[u8], &[u8]) -> T, fp: Kind) -> Vec<T> {
     let fps = load::gen_fps(fp, "test.mol");
 
     run_metrics(metric, fps)

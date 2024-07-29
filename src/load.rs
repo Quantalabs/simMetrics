@@ -12,11 +12,13 @@ fn load_from_file(f: &str) -> Vec<Molecule> {
         .collect::<Vec<_>>()
 }
 
-pub fn gen_fps(fp: Kind, f: &str) -> Vec<Vec<u32>> {
+pub fn gen_fps(fp: Kind, f: &str) -> Vec<Vec<u8>> {
     let fpg = fingerprint::FingerprintGenerator::new(fp);
     let mols = load_from_file(f);
 
-    mols.iter().map(|x| fpg.get_fingerprint(x)).collect()
+    mols.iter()
+        .map(|x| fpg.get_fingerprint(x).iter().map(|x| *x as u8).collect())
+        .collect()
 }
 
 pub fn load_plain(f: &str) -> Vec<String> {
