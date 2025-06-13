@@ -81,6 +81,6 @@ pub fn cluster(x: Vec<Vec<u8>>, k: usize, tolerance: f64, min_pts: usize) -> Vec
     clustering
         .0
         .values()
-        .map(|i| i.iter().map(|j| x[*j].clone()).collect())
+        .map(|i| i.iter().flat_map(|j| bubbles[*j].objects.clone()).collect())
         .collect()
 }
