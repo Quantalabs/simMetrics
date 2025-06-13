@@ -1,4 +1,7 @@
 use crate::measures::euclidean;
+use ndarray::Array2;
+use petal_clustering::{Fit, Optics};
+use petal_neighbors::distance::Euclidean;
 use rand::seq::SliceRandom;
 
 #[derive(Clone)]
@@ -63,4 +66,21 @@ pub fn compute_bubbles(x: Vec<Vec<u8>>, k: usize) -> Vec<Bubble> {
                 .push(a.clone());
             acc
         })
+}
+
+pub fn cluster(x: Vec<Vec<u8>>, k: usize, tolerance: f64, min_pts: usize) -> Vec<Vec<Vec<u8>>> {
+    let bubbles: Vec<Bubble> = compute_bubbles(x.clone(), k);
+    let rep = Array2::from_shape_vec(
+        (bubbles.len(), x[0].len()),
+        bubbles.iter().flat_map(|b| b.rep()).collect(),
+    )
+    .unwrap();
+
+    let clustering = Optics::new(tolerance, min_pts, Euclidean::default()).fit(&rep, None);
+
+    clustering
+        .0
+        .values()
+        .map(|i| i.iter().map(|j| x[*j].clone()).collect())
+        .collect()
 }
