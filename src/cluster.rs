@@ -1,5 +1,5 @@
 use crate::measures::euclidean;
-use ndarray::Array2;
+use ndarray::arr2;
 use petal_clustering::{Fit, Optics};
 use petal_neighbors::distance::Euclidean;
 use rand::seq::SliceRandom;
@@ -21,11 +21,14 @@ impl Bubble {
     pub fn rep(&self) -> Vec<f64> {
         self.objects
             .iter()
-            .fold(vec![0; self.n()], |acc, x| {
-                acc.into_iter().zip(x.iter()).map(|(a, b)| a + b).collect()
+            .fold(vec![0.0; self.d()], |acc, i| {
+                acc.iter()
+                    .zip(i.iter())
+                    .map(|(a, b)| a + *b as f64)
+                    .collect()
             })
             .iter()
-            .map(|x| *x as f64 / self.n() as f64)
+            .map(|x| x / self.n() as f64)
             .collect()
     }
 
@@ -69,13 +72,20 @@ pub fn compute_bubbles(x: Vec<Vec<u8>>, k: usize) -> Vec<Bubble> {
 }
 
 pub fn cluster(x: Vec<Vec<u8>>, k: usize, tolerance: f64, min_pts: usize) -> Vec<Vec<Vec<u8>>> {
-    let bubbles: Vec<Bubble> = compute_bubbles(x.clone(), k);
-    let rep = Array2::from_shape_vec(
-        (bubbles.len(), x[0].len()),
-        bubbles.iter().flat_map(|b| b.rep()).collect(),
-    )
-    .unwrap();
-
+    let bubbles: Vec<Bubble> = compute_bubbles(x.clone(), k)
+        .iter()
+        .filter(|x| !x.objects.is_empty())
+        .cloned()
+        .collect();
+    let rep = arr2(
+        bubbles
+            .iter()
+            .map(|x| {
+                x.rep().try_into().unwrap()
+            })
+            .collect::<Vec<[f64; 64]>>()
+            .as_slice(),
+    );
     let clustering = Optics::new(tolerance, min_pts, Euclidean::default()).fit(&rep, None);
 
     clustering
