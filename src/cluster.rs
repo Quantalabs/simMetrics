@@ -72,11 +72,13 @@ pub fn compute_bubbles(x: Vec<Vec<u8>>, k: usize) -> Vec<Bubble> {
 }
 
 pub fn cluster(x: Vec<Vec<u8>>, k: usize, tolerance: f64, min_pts: usize) -> Vec<Vec<Vec<u8>>> {
+    println!("== Computing Bubbles");
     let bubbles: Vec<Bubble> = compute_bubbles(x.clone(), k)
         .iter()
         .filter(|x| !x.objects.is_empty())
         .cloned()
         .collect();
+    println!("== Finding representatives");
     let rep = arr2(
         bubbles
             .iter()
@@ -86,6 +88,7 @@ pub fn cluster(x: Vec<Vec<u8>>, k: usize, tolerance: f64, min_pts: usize) -> Vec
             .collect::<Vec<[f64; 64]>>()
             .as_slice(),
     );
+    println!("== Clustering");
     let clustering = Optics::new(tolerance, min_pts, Euclidean::default()).fit(&rep, None);
 
     clustering
