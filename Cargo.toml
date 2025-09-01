@@ -7,6 +7,9 @@ description = "Implementation of chemical similarity metrics"
 homepage = "https://github.com/Quantalabs/simMetrics"
 repository = "https://github.com/Quantalabs/simMetrics"
 readme = "README.md"
+exclude = [
+  "test.mol"
+]
 
 [dependencies]
 ndarray = "0.16.1"
