@@ -1,7 +1,12 @@
 [package]
-name = "similarity_metrics"
+name = "sim-metrics"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Implementation of chemical similarity metrics"
+homepage = "https://github.com/Quantalabs/simMetrics"
+repository = "https://github.com/Quantalabs/simMetrics"
+readme = "README.md"
 
 [dependencies]
 ndarray = "0.16.1"
